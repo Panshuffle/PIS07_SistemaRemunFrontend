@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tabla de Empleados</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .triangle {
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      cursor: pointer;
+    }
+    .triangle-left {
+      border-right: 10px solid white;
+    }
+    .triangle-right {
+      border-left: 10px solid white;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-r from-[#02c9db] to-white flex flex-col items-center justify-center">
+  <h1 class="text-5xl font-bold text-[#00104a] text-center mb-8">Sistema Remun</h1>
+  <div class="w-full max-w-4xl p-6 bg-[#0229b8] rounded-lg">
+    <div class="flex justify-between items-center text-white mb-4">
+      <div id="prev" class="triangle triangle-left"></div>
+      <h1 id="month" class="text-xl font-bold">Enero</h1>
+      <div id="next" class="triangle triangle-right"></div>
+    </div>
+    <div class="mb-4">
+      <input
+        type="text"
+        placeholder="Buscar..."
+        class="w-full px-4 py-2 bg-[#6d6d6e] text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-white">
+    </div>
+    <table class="w-full text-white text-center">
+      <thead>
+        <tr>
+          <th class="p-2">Nombre</th>
+          <th class="p-2">Sueldo Base (CLP)</th>
+          <th class="p-2">Sueldo Final (CLP)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="bg-[#305dff]">
+          <td class="p-2">Juan Perez</td>
+          <td class="p-2">$650.000</td>
+          <td class="p-2">$950.000</td>
+        </tr>
+        <tr class="bg-[#01114d]">
+          <td class="p-2">Luisa Fuentes</td>
+          <td class="p-2">$450.000</td>
+          <td class="p-2">$550.000</td>
+        </tr>
+        <tr class="bg-[#305dff]">
+          <td class="p-2">Armando Casas</td>
+          <td class="p-2">$150.000</td>
+          <td class="p-2">$175.000</td>
+        </tr>
+        <tr class="bg-[#01114d]">
+          <td class="p-2">Ernesto Pereira</td>
+          <td class="p-2">$250.000</td>
+          <td class="p-2">$260.000</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    let currentMonthIndex = 0;
+
+    document.getElementById("prev").addEventListener("click", () => {
+      currentMonthIndex = (currentMonthIndex - 1 + months.length) % months.length;
+      document.getElementById("month").textContent = months[currentMonthIndex];
+    });
+
+    document.getElementById("next").addEventListener("click", () => {
+      currentMonthIndex = (currentMonthIndex + 1) % months.length;
+      document.getElementById("month").textContent = months[currentMonthIndex];
+    });
+  </script>
+</body>
+</html>
+
