@@ -19,21 +19,51 @@
     .triangle-right {
       border-left: 10px solid white;
     }
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      display: none;
+    }
+    .modal.active {
+      display: block;
+    }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-r from-[#02c9db] to-white flex flex-col items-center justify-center">
+<body class="min-h-screen bg-gradient-to-r from-[#ff1100] to-white flex flex-col items-center justify-center">
+  <div class="w-full max-w-4xl mb-4 flex justify-between items-center">
+    <button
+      class="bg-[#9c0000] text-white px-4 py-2 rounded-lg hover:bg-[#6e0000] transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+      (click)="cerrarSesion()">
+      Cerrar sesión
+    </button>
+    <p class="text-black font-medium text-2xl font-bold">Bienvenido, Wilfredo Soler</p>
+  </div>
   <h1 class="text-5xl font-bold text-[#00104a] text-center mb-8">Sistema Remun</h1>
   <div class="w-full max-w-4xl p-6 bg-[#0229b8] rounded-lg">
     <div class="flex justify-between items-center text-white mb-4">
-      <div id="prev" class="triangle triangle-left"></div>
-      <h1 id="month" class="text-xl font-bold">Enero</h1>
-      <div id="next" class="triangle triangle-right"></div>
+      <button (click)="prevMonth()" id="prev" class="triangle triangle-left"></button>
+      <h1 id="month-year" class="text-xl font-bold">{{this.mesTxt}} {{this.anio}}</h1>
+      <button id="next" (click)="nextMonth()" class="triangle triangle-right"></button>
     </div>
-    <div class="mb-4">
-      <input
-        type="text"
-        placeholder="Buscar..."
-        class="w-full px-4 py-2 bg-[#6d6d6e] text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-white">
+    <div class="flex justify-between items-center text-white mb-4">
+      <button
+        class="bg-[#0285bd] text-white px-4 py-2 rounded-lg hover:bg-[#026fa1] focus:outline-none focus:ring-2 focus:ring-white"
+        (click)="calcularSueldosFinales()">
+        Calcular sueldos finales
+      </button>
+      <button
+        class="bg-[#02bd78] text-white px-4 py-2 rounded-lg hover:bg-[#029a63] focus:outline-none focus:ring-2 focus:ring-white"
+        (click)="toggleModal()">
+        Añadir empleado
+      </button>
     </div>
     <table class="w-full text-white text-center">
       <thead>
@@ -44,44 +74,178 @@
         </tr>
       </thead>
       <tbody>
-        <tr class="bg-[#305dff]">
-          <td class="p-2">Juan Perez</td>
-          <td class="p-2">$650.000</td>
-          <td class="p-2">$950.000</td>
-        </tr>
-        <tr class="bg-[#01114d]">
-          <td class="p-2">Luisa Fuentes</td>
-          <td class="p-2">$450.000</td>
-          <td class="p-2">$550.000</td>
-        </tr>
-        <tr class="bg-[#305dff]">
-          <td class="p-2">Armando Casas</td>
-          <td class="p-2">$150.000</td>
-          <td class="p-2">$175.000</td>
-        </tr>
-        <tr class="bg-[#01114d]">
-          <td class="p-2">Ernesto Pereira</td>
-          <td class="p-2">$250.000</td>
-          <td class="p-2">$260.000</td>
+        <tr class="bg-[#305dff] border-white" *ngFor="let index of sueldosEmpleados">
+          <td class="p-2">{{index.nombre}}</td>
+          <td class="p-2">${{index.sueldoBase}}</td>
+          <td class="p-2">${{index.sueldoFinal}}</td>
         </tr>
       </tbody>
     </table>
+    <p *ngIf="!sueldosEmpleados?.length" class="text-white mt-4 text-center font-bold text-xl">
+      No hay registros de sueldos para este mes y año
+    </p>
+    <div class="flex justify-end mt-4">
+      <input
+        id="excel-upload"
+        type="file"
+        accept=".xlsx, .xls"
+        hidden
+        (change)="onFileSelected($event)"
+      />
+      <label
+        for="excel-upload"
+        class="bg-[#006e1f] text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-[#004f14] transition-colors"
+      >
+        Subir Excel
+      </label>
+    </div>
+
+
+<!-- Modal Form -->
+<div id="modal" class="modal" [class.active]="isModalOpen">
+  <div class="max-w-5xl w-full bg-white p-8 rounded-lg">
+    <h2 class="text-3xl font-bold text-center mb-8 text-[#0229b8]">Añadir Empleado</h2>
+
+    <form (ngSubmit)="submitEmpleado()" [formGroup]="form" class="space-y-6">
+      <!-- Grid layout for form fields -->
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Left column -->
+        <div class="space-y-4">
+          <!-- Nombre -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Nombre:</label>
+            <input
+              type="text"
+              formControlName="nombre"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8]"
+              [(ngModel)]="nuevoEmpleado.nombre"
+              name="nombre">
+          </div>
+
+          <!-- Cargas Familiares -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Cantidad de cargas familiares:</label>
+            <input
+              type="number"
+              formControlName="cargaFamiliar"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8]"
+              [(ngModel)]="nuevoEmpleado.cargasFamiliares"
+              name="cargasFamiliares">
+          </div>
+
+          <!-- Isapre -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Nombre de la isapre:</label>
+            <select
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8] bg-white"
+              formControlName="isapre"
+              [(ngModel)]="nuevoEmpleado.isapre"
+              name="isapre">
+              <option>FONASA</option>
+              <option>CONSALUD</option>
+              <option>CRUZ BLANCA</option>
+              <option>BANMEDICA</option>
+            </select>
+          </div>
+
+          <!-- AFP -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Nombre de AFP:</label>
+            <select
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8] bg-white"
+              formControlName="afp"
+              [(ngModel)]="nuevoEmpleado.afp"
+              name="afp">
+              <option>MODELO</option>
+              <option>PROVIDA</option>
+              <option>HABITAT</option>
+              <option>CAPITAL</option>
+              <option>PLANVITAL</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="space-y-4">
+          <!-- Tipo de Contrato -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Tipo de contrato:</label>
+            <select
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8] bg-white"
+              formControlName="contrato"
+              [(ngModel)]="nuevoEmpleado.tipoContrato"
+              name="tipoContrato">
+              <option>PLAZO</option>
+              <option>INDEFINIDO</option>
+            </select>
+          </div>
+
+          <!-- Mes Actual -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Fecha de registro:</label>
+            <input
+              type="date"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8]"
+              formControlName="mes"
+              [(ngModel)]="nuevoEmpleado.mes"
+              name="mes">
+          </div>
+
+          <!-- Sueldo Base -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Sueldo base:</label>
+            <input
+              type="number"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8]"
+              formControlName="sueldoBase"
+              [(ngModel)]="nuevoEmpleado.sueldoBase"
+              name="sueldoBase">
+          </div>
+
+          <!-- Horas Extra -->
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Horas extra:</label>
+            <input
+              type="number"
+              class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0229b8]"
+              formControlName="horasExtra"
+              [(ngModel)]="nuevoEmpleado.horasExtra"
+              name="horasExtra">
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-4 mt-8">
+        <button
+          type="button"
+          class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+          (click)="toggleModal()">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          (click)="registrarEmpleado()"
+          class="px-6 py-2 bg-[#0229b8] text-white rounded-lg hover:bg-[#0220a0] transition-colors">
+          Registrar
+        </button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <script>
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    let currentMonthIndex = 0;
+<!-- Update the modal styles in your CSS -->
+<style>
+.modal {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4;
+  display: none;
+  z-index: 50;
+}
 
-    document.getElementById("prev").addEventListener("click", () => {
-      currentMonthIndex = (currentMonthIndex - 1 + months.length) % months.length;
-      document.getElementById("month").textContent = months[currentMonthIndex];
-    });
+.modal.active {
+  display: flex;
+}
+</style>
 
-    document.getElementById("next").addEventListener("click", () => {
-      currentMonthIndex = (currentMonthIndex + 1) % months.length;
-      document.getElementById("month").textContent = months[currentMonthIndex];
-    });
-  </script>
-</body>
-</html>
+<app-message-modal></app-message-modal>
 
